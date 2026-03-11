@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Test</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        #root {
+            min-height: 100vh;
+        }
+        .test-visible {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .test-visible h1 {
+            font-size: 48px;
+            margin: 0 0 20px 0;
+        }
+        .test-visible p {
+            font-size: 20px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="test-visible">
+            <h1>⚠️ React Not Loading</h1>
+            <p>If you see this message, React is not rendering.</p>
+            <p>Check the browser console (F12) for errors.</p>
+        </div>
+    </div>
+    <script>
+        console.log('✓ HTML loaded');
+        console.log('✓ Root element exists:', !!document.getElementById('root'));
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

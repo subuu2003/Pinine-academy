@@ -2,12 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="https://base44.com/logo_v2.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>edu-publishers</title>
+    <title>Pinene Academy</title>
+    <style>
+      #root { min-height: 100vh; }
+      body { margin: 0; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      console.log('=== Page Load Debug ===');
+      console.log('1. HTML loaded');
+      console.log('2. Root element:', document.getElementById('root'));
+      
+      globalThis.process ??= { env: {} };
+      globalThis.process.env ??= {};
+      globalThis.process.env.NODE_ENV ??= "development";
+      globalThis.global ??= globalThis;
+      
+      console.log('3. Global polyfills set');
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
