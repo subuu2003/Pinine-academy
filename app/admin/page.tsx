@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,12 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [books, setBooks] = useState<BookItem[]>(initialMockBooks);
+  const [orderStats, setOrderStats] = useState<{
+    total_orders: number;
+    completed_orders: number;
+    pending_orders: number;
+    total_revenue: number;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -76,7 +83,7 @@ export default function AdminPage() {
     }
   }, [isLoadingAuth, isAuthenticated, user, router]);
 
-  // Load books
+  // Load books & order stats
   useEffect(() => {
     const loadBooks = async () => {
       try {
@@ -88,10 +95,26 @@ export default function AdminPage() {
         // Keeps initial mock data
       }
     };
+
+    const loadOrderStats = async () => {
+      try {
+        const res = await apiClient.get('/orders/admin_stats/');
+        const statsData = res.data?.data || res.data;
+        if (statsData && typeof statsData === 'object') {
+          setOrderStats(statsData);
+        }
+      } catch (e) {
+        // Fallback to static
+      }
+    };
+
     if (isAuthenticated) {
       loadBooks();
+      if (user?.is_staff) {
+        loadOrderStats();
+      }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,7 +178,7 @@ export default function AdminPage() {
 
   if (isLoadingAuth || !isAuthenticated || !user?.is_staff) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-50">
+      <div className="h-full w-full flex flex-col items-center justify-center bg-gray-50">
         <Loader2 className="w-10 h-10 animate-spin text-[#0d9488] mb-3" />
         <p className="text-sm font-semibold text-gray-500">Checking staff authorization...</p>
       </div>
@@ -163,7 +186,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-full w-full bg-gray-50 overflow-hidden">
       <AdminSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -198,20 +221,24 @@ export default function AdminPage() {
               trend="+6.2%" 
               color="bg-teal-50 text-[#0d9488]" 
             />
-            <StatCard 
-              icon={TrendingUp} 
-              label="Publication Revenue" 
-              value="₹42,500" 
-              trend="+18%" 
-              color="bg-amber-50 text-amber-600" 
-            />
-            <StatCard 
-              icon={ShoppingBag} 
-              label="Completed Orders" 
-              value="312" 
-              trend="+8%" 
-              color="bg-purple-50 text-purple-600" 
-            />
+            <Link href="/admin/orders" className="block transition-transform hover:-translate-y-0.5">
+              <StatCard 
+                icon={TrendingUp} 
+                label="Publication Revenue" 
+                value={orderStats?.total_revenue != null ? `₹${Number(orderStats.total_revenue).toLocaleString('en-IN')}` : "₹42,500"} 
+                trend={orderStats?.completed_orders != null ? `${orderStats.completed_orders} delivered` : "+18%"} 
+                color="bg-amber-50 text-amber-600" 
+              />
+            </Link>
+            <Link href="/admin/orders" className="block transition-transform hover:-translate-y-0.5">
+              <StatCard 
+                icon={ShoppingBag} 
+                label="Total Orders" 
+                value={orderStats?.total_orders != null ? orderStats.total_orders.toString() : "312"} 
+                trend={orderStats?.pending_orders != null ? `${orderStats.pending_orders} active` : "+8%"} 
+                color="bg-purple-50 text-purple-600" 
+              />
+            </Link>
           </div>
 
           {/* Book Catalog Section */}

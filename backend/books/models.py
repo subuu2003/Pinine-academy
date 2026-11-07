@@ -29,6 +29,7 @@ class Book(models.Model):
     publisher = models.CharField(max_length=255, default='PINENE ACADEMY')
     is_bestseller = models.BooleanField(default=False)
     inStock = models.BooleanField(default=True)
+    stock_quantity = models.PositiveIntegerField(default=50, help_text="Available stock inventory")
     is_deleted = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)

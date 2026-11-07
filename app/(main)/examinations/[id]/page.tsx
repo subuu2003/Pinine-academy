@@ -14,17 +14,17 @@ import {
   AlertCircle, 
   Loader2, 
   ShieldCheck, 
-  Layers, 
-  Info,
+  Sparkles,
   Lock,
-  Sparkles
+  GraduationCap,
+  ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import apiClient from '@/lib/apiClient';
-import { StudentSidebar } from '@/components/student/StudentSidebar';
+import { RegisterPromptModal } from '@/components/auth/RegisterPromptModal';
 
-interface StudentExamDetail {
+interface ExaminationDetail {
   id: number;
   title: string;
   description: string;
@@ -39,21 +39,18 @@ interface StudentExamDetail {
   created_at: string;
 }
 
-export default function StudentExaminationDetailPage() {
+export default function PublicExaminationDetailPage() {
   const { user, isAuthenticated, isLoadingAuth } = useAuth();
   const router = useRouter();
   const params = useParams();
   const examId = params?.id;
 
-  const [examination, setExamination] = useState<StudentExamDetail | null>(null);
+  const [examination, setExamination] = useState<ExaminationDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
 
-  useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated) {
-      router.push('/sign-in');
-    }
-  }, [isLoadingAuth, isAuthenticated, router]);
+  const isAdmin = isAuthenticated && (user?.role === 'ADMIN' || user?.is_staff);
+  const isStudent = isAuthenticated && !isAdmin;
 
   useEffect(() => {
     const fetchExamDetail = async () => {
@@ -70,10 +67,8 @@ export default function StudentExaminationDetailPage() {
       }
     };
 
-    if (isAuthenticated) {
-      fetchExamDetail();
-    }
-  }, [isAuthenticated, examId]);
+    fetchExamDetail();
+  }, [examId]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -112,12 +107,12 @@ export default function StudentExaminationDetailPage() {
     }
   };
 
-  if (isLoadingAuth || isLoading || !examination) {
+  if (isLoading || !examination) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center">
+      <div className="min-h-[70vh] flex items-center justify-center bg-[#f8fafc]">
         <div className="text-center space-y-3">
           <Loader2 className="w-10 h-10 text-[#0d9488] animate-spin mx-auto" />
-          <p className="text-sm font-medium text-gray-500">Loading examination details...</p>
+          <p className="text-sm font-medium text-gray-500">Loading examination schedule...</p>
         </div>
       </div>
     );
@@ -128,65 +123,112 @@ export default function StudentExaminationDetailPage() {
   const isCompleted = examination.current_status === 'COMPLETED';
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
-      {/* Student Sidebar */}
-      <StudentSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
+    <div className="bg-[#f8fafc] min-h-screen pb-20">
+      {/* Top Breadcrumb Header */}
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <Link href="/examinations" className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-[#1e3a5f] transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+            Back to All Examinations
+          </Link>
+          <span className="text-xs text-gray-400 font-medium">
+            Examination #{examination.id}
+          </span>
+        </div>
+      </div>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* Sticky Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sticky top-0 z-20 shadow-xs">
-          <div className="flex items-center gap-3">
-            <Link href="/examinations">
-              <Button variant="ghost" size="sm" className="rounded-xl h-9 w-9 p-0 text-gray-500 hover:text-[#1e3a5f]">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            </Link>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-[#0d9488] border border-teal-200 uppercase tracking-wider">
-                  Exam Details
-                </span>
-                <span className="text-xs text-gray-400 font-semibold">Test ID: #{examination.id}</span>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-6">
+
+        {/* 1. Unauthenticated CTA Alert Banner */}
+        {!isAuthenticated && (
+          <div className="bg-gradient-to-r from-teal-900 to-[#1e3a5f] text-white rounded-3xl p-6 sm:p-8 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 border border-teal-800">
+            <div className="space-y-1.5 max-w-xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur text-xs font-bold text-teal-200">
+                <Lock className="w-3.5 h-3.5" />
+                Student Authentication Required
               </div>
-              <h1 className="text-lg font-black text-[#1e3a5f] tracking-tight truncate max-w-md">
-                {examination.title}
-              </h1>
+              <h2 className="text-xl sm:text-2xl font-black">
+                Log In or Enroll to Attempt this Examination
+              </h2>
+              <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed">
+                Live examination rooms, interactive question papers, countdown timers, and automated scoring are reserved for enrolled students.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0 flex-wrap">
+              <Link href={`/sign-up?redirect=/student/examinations/${examination.id}`}>
+                <Button className="bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold rounded-xl px-5 h-11 text-xs sm:text-sm shadow-md">
+                  Enroll / Register
+                </Button>
+              </Link>
+              <Link href={`/sign-in?redirect=/student/examinations/${examination.id}`}>
+                <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-bold rounded-xl px-5 h-11 text-xs sm:text-sm">
+                  Sign In
+                </Button>
+              </Link>
             </div>
           </div>
+        )}
 
-          <div className="flex items-center gap-3">
-            <Link href="/examinations">
-              <Button variant="outline" size="sm" className="rounded-xl border-gray-200 text-gray-600 hover:text-[#1e3a5f]">
-                All Exams
-              </Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm" className="rounded-xl border-gray-200 text-gray-600 hover:text-[#1e3a5f]">
-                Dashboard
+        {/* 2. Authenticated Student Action Banner */}
+        {isStudent && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                  Enrolled Candidate Verified
+                </p>
+                <h3 className="text-base font-bold text-gray-900">
+                  Ready to enter the testing hall, {user?.first_name || user?.username}?
+                </h3>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Launch this examination in your Student Portal with live timer and test instructions.
+                </p>
+              </div>
+            </div>
+
+            <Link href={`/student/examinations/${examination.id}`} className="shrink-0">
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl h-11 px-6 text-xs sm:text-sm shadow-xs flex items-center gap-2">
+                Enter Test Room
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>
-        </header>
+        )}
 
-        {/* Content Body */}
-        <div className="p-6 sm:p-8 space-y-6 max-w-4xl mx-auto w-full">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center gap-3">
-          <Link href="/examinations">
-            <Button variant="ghost" size="sm" className="rounded-xl h-9 w-9 p-0 text-gray-500 hover:text-[#1e3a5f]">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          </Link>
-          <div className="text-xs text-gray-400">
-            <Link href="/dashboard" className="hover:underline">Dashboard</Link> /{' '}
-            <Link href="/examinations" className="hover:underline">Examinations</Link> /{' '}
-            <span className="text-gray-700 font-medium">Exam #{examination.id}</span>
+        {/* 3. Authenticated Admin Action Banner */}
+        {isAdmin && (
+          <div className="bg-blue-50 border border-blue-200 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#1e3a5f] text-white flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-6 h-6 text-teal-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                  Administrator Console
+                </p>
+                <h3 className="text-base font-bold text-gray-900">
+                  Manage Examination Details & Question Bank
+                </h3>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Edit timing, adjust duration, update syllabus, or monitor candidate submissions.
+                </p>
+              </div>
+            </div>
+
+            <Link href={`/admin/examinations/${examination.id}/edit`} className="shrink-0">
+              <Button className="bg-[#1e3a5f] hover:bg-[#2a4a7a] text-white font-bold rounded-xl h-10 px-5 text-xs shadow-xs">
+                Edit Examination
+              </Button>
+            </Link>
           </div>
-        </div>
+        )}
 
-        {/* Main Status Header Card */}
-        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-sm space-y-6">
+        {/* Main Details Card */}
+        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200/80 shadow-xs space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-100">
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -215,49 +257,19 @@ export default function StudentExaminationDetailPage() {
               </h1>
             </div>
 
-            <Link href="/examinations">
-              <Button variant="outline" className="rounded-xl text-xs font-semibold">
-                Back to All Exams
+            {!isAuthenticated && (
+              <Button 
+                onClick={() => setIsPromptOpen(true)}
+                className="bg-[#0d9488] hover:bg-[#0f766e] text-white rounded-xl text-xs font-bold px-5 h-10 shadow-xs"
+              >
+                Attempt Examination
               </Button>
-            </Link>
-          </div>
-
-          {/* Phase 3 Notice Banner */}
-          <div className={cn(
-            "p-5 rounded-2xl border flex items-start gap-3.5",
-            isOngoing 
-              ? "bg-emerald-50/80 border-emerald-200 text-emerald-900"
-              : isUpcoming 
-              ? "bg-blue-50/80 border-blue-200 text-blue-900"
-              : "bg-gray-50 border-gray-200 text-gray-800"
-          )}>
-            <div className="p-2 bg-white rounded-xl shadow-2xs mt-0.5 shrink-0">
-              <Sparkles className={cn(
-                "w-5 h-5",
-                isOngoing ? "text-emerald-600" : isUpcoming ? "text-blue-600" : "text-gray-500"
-              )} />
-            </div>
-            <div className="space-y-1 text-xs">
-              <p className="font-bold text-sm">
-                {isOngoing 
-                  ? "Scheduled Test Window is Currently Open" 
-                  : isUpcoming 
-                  ? "Upcoming Test Schedule Confirmed" 
-                  : "Examination Schedule Concluded"}
-              </p>
-              <p className="opacity-90 leading-relaxed">
-                {isOngoing 
-                  ? "This examination is live in the schedule. Under Phase 3 (Examination Management), scheduling and availability verification are fully active. Interactive question rendering and answer recording will activate in the next development phase (Question Bank & Examination Attempts)."
-                  : isUpcoming 
-                  ? `Please review your syllabus and be ready on ${formatDate(examination.exam_date)} at ${formatTime(examination.start_time)}. The test window is locked until the configured start time.`
-                  : `The allotted time for this examination has ended (${formatDateTime(examination.end_datetime)}). Results and answer review will be connected in future modules.`}
-              </p>
-            </div>
+            )}
           </div>
 
           {/* Schedule Particulars Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
+            <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-100">
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
                 Examination Date
               </span>
@@ -266,7 +278,7 @@ export default function StudentExaminationDetailPage() {
               </span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
+            <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-100">
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
                 Scheduled Start Time
               </span>
@@ -275,7 +287,7 @@ export default function StudentExaminationDetailPage() {
               </span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
+            <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-100">
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
                 Duration Allotted
               </span>
@@ -285,24 +297,24 @@ export default function StudentExaminationDetailPage() {
             </div>
           </div>
 
-          {/* Server Time & Window Precision */}
-          <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 text-xs text-gray-500 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          {/* Precision Window Info */}
+          <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 text-xs text-gray-600 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-gray-400 shrink-0" />
               <span>
-                <strong className="text-gray-700">Authoritative Schedule:</strong> {formatDateTime(examination.start_datetime)} to {formatDateTime(examination.end_datetime)}
+                <strong className="text-gray-800">Time Window:</strong> {formatDateTime(examination.start_datetime)} to {formatDateTime(examination.end_datetime)}
               </span>
             </div>
-            <div className="text-[11px] text-gray-400">
-              Server Time Synchronized (UTC Enforced)
+            <div className="text-[11px] text-gray-400 font-medium">
+              Synchronized Exam Server Clock (UTC Enforced)
             </div>
           </div>
 
-          {/* Description & Syllabus */}
+          {/* Description & Syllabus Overview */}
           <div className="space-y-3 pt-2">
-            <h3 className="text-base font-bold text-[#1e3a5f]">Instructions & Guidelines</h3>
+            <h3 className="text-base font-bold text-[#1e3a5f]">Instructions & Syllabus Coverage</h3>
             {examination.description ? (
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
                 {examination.description}
               </div>
             ) : (
@@ -311,7 +323,16 @@ export default function StudentExaminationDetailPage() {
           </div>
         </div>
       </div>
-    </main>
-  </div>
-);
+
+      {/* Registration Prompt Modal */}
+      <RegisterPromptModal
+        isOpen={isPromptOpen}
+        onClose={() => setIsPromptOpen(false)}
+        title={`Enroll to Attempt "${examination.title}"`}
+        description="Candidate examination attempts, answer tracking, and timed tests require an active student account. Please sign in or register to begin."
+        itemName={examination.title}
+        redirectPath={`/student/examinations/${examination.id}`}
+      />
+    </div>
+  );
 }

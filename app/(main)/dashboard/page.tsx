@@ -21,15 +21,25 @@ import {
   ArrowUpRight,
   ShieldCheck,
   AlertCircle,
-  CalendarCheck,
-  Sparkles
+  Sparkles,
+  Bell,
+  Megaphone
 } from 'lucide-react';
+import { 
+  getCategoryBadgeClass, 
+  getCategoryLabel, 
+  formatNoticeDateShort,
+  NOTICE_CATEGORIES 
+} from '@/lib/notices';
 
 export default function StudentDashboardPage() {
   const { user, isAuthenticated, isLoadingAuth } = useAuth();
   const router = useRouter();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [recentExams, setRecentExams] = useState<any[]>([]);
+  const [recentNotices, setRecentNotices] = useState<any[]>([]);
+  const [isLoadingNotices, setIsLoadingNotices] = useState<boolean>(true);
+  const [selectedNoticeCategory, setSelectedNoticeCategory] = useState<string>('ALL');
 
   useEffect(() => {
     if (!isLoadingAuth && !isAuthenticated) {
@@ -52,6 +62,27 @@ export default function StudentDashboardPage() {
     }
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    const loadNotices = async () => {
+      setIsLoadingNotices(true);
+      try {
+        let url = '/notices/latest/?limit=4';
+        if (selectedNoticeCategory !== 'ALL') {
+          url = `/notices/?category=${selectedNoticeCategory}`;
+        }
+        const res = await apiClient.get(url);
+        const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
+        setRecentNotices(data.slice(0, 4));
+      } catch (e) {
+        // Silently catch
+      } finally {
+        setIsLoadingNotices(false);
+      }
+    };
+
+    loadNotices();
+  }, [selectedNoticeCategory]);
+
   if (isLoadingAuth || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
@@ -61,7 +92,7 @@ export default function StudentDashboardPage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
+    <div className="flex h-full w-full bg-[#f8fafc] overflow-hidden">
       {/* Student Environment Sidebar */}
       <StudentSidebar
         isCollapsed={isSidebarCollapsed}
@@ -223,6 +254,130 @@ export default function StudentDashboardPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Latest Notices & Announcements Section (Phase 7B) */}
+          <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-teal-50 text-[#0d9488] rounded-2xl">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-[#1e3a5f]">Latest Announcements & Notices</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Official examination updates, admission deadlines, and academic circulars
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 self-start sm:self-auto">
+                <Link href="/notices">
+                  <Button variant="ghost" className="text-[#0d9488] hover:text-[#0f766e] hover:bg-teal-50 font-semibold text-xs h-9 px-3.5 rounded-xl">
+                    View Notice Board
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Category Quick Filter Chips */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+              <button
+                onClick={() => setSelectedNoticeCategory('ALL')}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl font-medium transition-colors shrink-0",
+                  selectedNoticeCategory === 'ALL'
+                    ? "bg-[#1e3a5f] text-white font-semibold shadow-xs"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                All Announcements
+              </button>
+              {NOTICE_CATEGORIES.map(cat => (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedNoticeCategory(cat.value)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-xl font-medium transition-colors shrink-0",
+                    selectedNoticeCategory === cat.value
+                      ? "bg-[#0d9488] text-white font-semibold shadow-xs"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  )}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Notices Grid */}
+            {isLoadingNotices ? (
+              <div className="py-12 text-center space-y-2">
+                <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#0d9488] mx-auto" />
+                <p className="text-xs text-gray-400">Loading notices...</p>
+              </div>
+            ) : recentNotices.length > 0 ? (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {recentNotices.map((notice) => {
+                  const isImportant = notice.category === 'IMPORTANT';
+                  return (
+                    <div
+                      key={notice.id}
+                      className={cn(
+                        "p-5 rounded-2xl border transition-all duration-200 hover:shadow-md flex flex-col justify-between group",
+                        isImportant
+                          ? "bg-rose-50/30 border-rose-200 ring-1 ring-rose-200/50"
+                          : "bg-gray-50/70 border-gray-100 hover:bg-white"
+                      )}
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={cn(
+                            "px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider",
+                            getCategoryBadgeClass(notice.category)
+                          )}>
+                            {getCategoryLabel(notice.category)}
+                          </span>
+
+                          <span className="text-[11px] text-gray-400">
+                            {formatNoticeDateShort(notice.publish_date)}
+                          </span>
+                        </div>
+
+                        <h4 className="font-bold text-sm text-[#1e3a5f] group-hover:text-[#0d9488] transition-colors line-clamp-1">
+                          <Link href={`/notices/${notice.id}`}>
+                            {notice.title}
+                          </Link>
+                        </h4>
+
+                        <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                          {notice.short_description || notice.content}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-gray-200/60 flex items-center justify-between">
+                        <span className="text-[11px] text-gray-400">
+                          {notice.expiry_date ? `Valid till ${formatNoticeDateShort(notice.expiry_date)}` : 'Active Notice'}
+                        </span>
+                        <Link href={`/notices/${notice.id}`}>
+                          <Button size="sm" variant="ghost" className="text-xs h-7 px-2.5 text-[#0d9488] font-semibold hover:bg-teal-50 rounded-lg">
+                            Read Details →
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-8 text-center rounded-2xl bg-gray-50 border border-dashed border-gray-200">
+                <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm font-bold text-gray-700">No active circulars in this category</p>
+                <p className="text-xs text-gray-400 max-w-xs mx-auto mt-0.5">
+                  Check back soon for new announcements, or select "All Announcements" to view general notices.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Examinations & Order History Grid */}

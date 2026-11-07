@@ -239,7 +239,7 @@ function AdminExaminationsContent() {
   };
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
+    <div className="flex h-full w-full bg-[#f8fafc] overflow-hidden">
       {/* Sidebar */}
       <AdminSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
 
@@ -642,7 +642,7 @@ function AdminExaminationsContent() {
 export default function AdminExaminationsPage() {
   return (
     <React.Suspense fallback={
-      <div className="flex h-screen items-center justify-center bg-[#f8fafc]">
+      <div className="flex h-full w-full items-center justify-center bg-[#f8fafc]">
         <Loader2 className="w-10 h-10 text-[#0d9488] animate-spin" />
       </div>
     }>

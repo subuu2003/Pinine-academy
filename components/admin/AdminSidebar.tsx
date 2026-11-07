@@ -12,7 +12,9 @@ import {
   ChevronLeft,
   ChevronRight,
   BookMarked,
-  ArrowLeft
+  ArrowLeft,
+  Bell,
+  ShoppingBag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -32,13 +34,15 @@ export function AdminSidebar({
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
     { icon: Users, label: 'Students', path: '/admin/students' },
     { icon: BookOpen, label: 'Examinations', path: '/admin/examinations' },
+    { icon: Bell, label: 'Notices', path: '/admin/notices' },
+    { icon: ShoppingBag, label: 'Orders', path: '/admin/orders' },
     { icon: BookMarked, label: 'All Books', path: '/admin#books' },
   ];
 
   return (
     <aside 
       className={cn(
-        "flex flex-col h-screen bg-[#1e3a5f] text-white transition-all duration-300 relative border-r border-[#2a4a7a] select-none flex-shrink-0",
+        "flex flex-col h-full bg-[#1e3a5f] text-white transition-all duration-300 relative border-r border-[#2a4a7a] select-none flex-shrink-0",
         isCollapsed ? "w-20" : "w-64"
       )}
     >
@@ -58,68 +62,31 @@ export function AdminSidebar({
       <nav className="flex-1 px-3 space-y-1.5 mt-2 overflow-y-auto">
         {menuItems.map((item) => {
           const isExam = item.path === '/admin/examinations';
+          const isNotice = item.path === '/admin/notices';
+          const isOrder = item.path === '/admin/orders';
           const isActive = isExam 
             ? pathname?.startsWith('/admin/examinations')
+            : isNotice
+            ? pathname?.startsWith('/admin/notices')
+            : isOrder
+            ? pathname?.startsWith('/admin/orders')
             : pathname === item.path;
 
           return (
-            <div key={item.label} className="space-y-1">
-              <Link
-                href={item.path}
-                className={cn(
-                  "flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all group hover:bg-[#2a4a7a]",
-                  isActive ? "bg-[#0d9488] text-white font-semibold" : "text-gray-300 hover:text-white"
-                )}
-              >
-                <item.icon className={cn(
-                  "w-5 h-5 shrink-0",
-                  isActive ? "text-white" : "group-hover:scale-110 transition-transform"
-                )} />
-                {!isCollapsed && <span className="text-sm">{item.label}</span>}
-              </Link>
-
-              {/* Examinations Sub-navigation */}
-              {isExam && !isCollapsed && pathname?.startsWith('/admin/examinations') && (
-                <div className="ml-7 pl-3 border-l border-[#2a4a7a] space-y-1 pt-1 pb-1">
-                  <Link
-                    href="/admin/examinations"
-                    className={cn(
-                      "block text-xs py-1.5 px-2 rounded-lg transition-colors",
-                      pathname === '/admin/examinations' ? "text-white bg-[#2a4a7a] font-medium" : "text-gray-300 hover:text-white"
-                    )}
-                  >
-                    All Examinations
-                  </Link>
-                  <Link
-                    href="/admin/examinations/create"
-                    className={cn(
-                      "block text-xs py-1.5 px-2 rounded-lg transition-colors",
-                      pathname === '/admin/examinations/create' ? "text-white bg-[#2a4a7a] font-medium" : "text-gray-300 hover:text-white"
-                    )}
-                  >
-                    + Create Examination
-                  </Link>
-                  <Link
-                    href="/admin/examinations?status=UPCOMING"
-                    className="block text-xs py-1.5 px-2 rounded-lg text-gray-300 hover:text-white transition-colors"
-                  >
-                    Upcoming
-                  </Link>
-                  <Link
-                    href="/admin/examinations?status=ONGOING"
-                    className="block text-xs py-1.5 px-2 rounded-lg text-gray-300 hover:text-white transition-colors"
-                  >
-                    Ongoing
-                  </Link>
-                  <Link
-                    href="/admin/examinations?status=COMPLETED"
-                    className="block text-xs py-1.5 px-2 rounded-lg text-gray-300 hover:text-white transition-colors"
-                  >
-                    Completed
-                  </Link>
-                </div>
+            <Link
+              key={item.label}
+              href={item.path}
+              className={cn(
+                "flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all group hover:bg-[#2a4a7a]",
+                isActive ? "bg-[#0d9488] text-white font-semibold" : "text-gray-300 hover:text-white"
               )}
-            </div>
+            >
+              <item.icon className={cn(
+                "w-5 h-5 shrink-0",
+                isActive ? "text-white" : "group-hover:scale-110 transition-transform"
+              )} />
+              {!isCollapsed && <span className="text-sm">{item.label}</span>}
+            </Link>
           );
         })}
 

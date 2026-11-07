@@ -151,7 +151,7 @@ export default function AdminExaminationDetailPage() {
 
   if (isLoading || !examination) {
     return (
-      <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
+      <div className="flex h-full w-full bg-[#f8fafc] overflow-hidden">
         <AdminSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-3">
@@ -164,7 +164,7 @@ export default function AdminExaminationDetailPage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
+    <div className="flex h-full w-full bg-[#f8fafc] overflow-hidden">
       {/* Sidebar */}
       <AdminSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
 

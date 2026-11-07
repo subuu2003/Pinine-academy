@@ -20,14 +20,15 @@ import {
   Lock,
   Layers,
   Award,
-  ChevronRight
+  ChevronRight,
+  GraduationCap
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import apiClient from '@/lib/apiClient';
-import { StudentSidebar } from '@/components/student/StudentSidebar';
+import { RegisterPromptModal } from '@/components/auth/RegisterPromptModal';
 
-interface StudentExam {
+interface ExaminationItem {
   id: number;
   title: string;
   description: string;
@@ -42,22 +43,19 @@ interface StudentExam {
   created_at: string;
 }
 
-function StudentExaminationsContent() {
+function PublicExaminationsContent() {
   const { user, isAuthenticated, isLoadingAuth } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [examinations, setExaminations] = useState<StudentExam[]>([]);
+  const [examinations, setExaminations] = useState<ExaminationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ONGOING' | 'UPCOMING' | 'COMPLETED'>('ALL');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [promptExam, setPromptExam] = useState<ExaminationItem | null>(null);
 
-  useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated) {
-      router.push('/sign-in');
-    }
-  }, [isLoadingAuth, isAuthenticated, router]);
+  const isAdmin = isAuthenticated && (user?.role === 'ADMIN' || user?.is_staff);
+  const isStudent = isAuthenticated && !isAdmin;
 
   useEffect(() => {
     const filterFromUrl = searchParams.get('status')?.toUpperCase();
@@ -89,10 +87,8 @@ function StudentExaminationsContent() {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchExaminations();
-    }
-  }, [isAuthenticated, statusFilter]);
+    fetchExaminations();
+  }, [statusFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,80 +120,123 @@ function StudentExaminationsContent() {
     }
   };
 
-  const ongoingCount = examinations.filter(e => e.current_status === 'ONGOING').length;
-  const upcomingCount = examinations.filter(e => e.current_status === 'UPCOMING').length;
-  const completedCount = examinations.filter(e => e.current_status === 'COMPLETED').length;
-
-  if (isLoadingAuth) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-[#0d9488] animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
-      {/* Student Sidebar */}
-      <StudentSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
+    <div className="bg-[#f8fafc] min-h-screen pb-20">
+      {/* Hero Header Section */}
+      <section className="bg-gradient-to-r from-[#1e3a5f] via-[#244570] to-[#1e3a5f] text-white py-16 px-4 sm:px-6 lg:px-8 shadow-md relative overflow-hidden">
+        <div className="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+        <div className="absolute left-1/3 -bottom-20 w-96 h-96 rounded-full bg-[#0d9488]/10 blur-3xl pointer-events-none" />
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* Sticky Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sticky top-0 z-20 shadow-xs">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-[#0d9488] border border-teal-200 uppercase tracking-wider">
-                Student Portal
-              </span>
-              <h1 className="text-xl sm:text-2xl font-black text-[#1e3a5f] tracking-tight">
-                Online Examinations
-              </h1>
+        <div className="max-w-6xl mx-auto relative z-10 text-center space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/15 text-xs font-semibold tracking-wider uppercase text-teal-300">
+            <Award className="w-4 h-4 text-[#0d9488]" />
+            Official Examination Schedule
+          </div>
+
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight">
+            Academic Examinations & Mock Tests
+          </h1>
+
+          <p className="text-white/80 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+            View published syllabus tests, upcoming dates, and testing windows. Enrolled students can launch live examination attempts via their Student Portal.
+          </p>
+        </div>
+      </section>
+
+      {/* Main Content Container */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-6">
+
+        {/* 1. Unauthenticated CTA Banner */}
+        {!isAuthenticated && (
+          <div className="bg-gradient-to-r from-teal-900 to-[#1e3a5f] text-white rounded-3xl p-6 sm:p-8 shadow-md relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 border border-teal-800/50">
+            <div className="space-y-2 max-w-xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur text-xs font-bold text-teal-200">
+                <Sparkles className="w-3.5 h-3.5" />
+                Student Examination Portal
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+                Create an Account to Attempt Mock Examinations
+              </h2>
+              <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed">
+                Registered students receive automated timers, question sets, instant grading, and detailed syllabus performance reports. Create a free account or sign in to participate.
+              </p>
             </div>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-              Scheduled mock tests, ongoing exam windows, and syllabus milestones.
-            </p>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm" className="rounded-xl border-gray-200 text-gray-600 hover:text-[#1e3a5f]">
-                Back to Dashboard
-              </Button>
-            </Link>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchExaminations}
-              className="rounded-xl border-gray-200 text-gray-600 hover:text-[#1e3a5f]"
-            >
-              Refresh
-            </Button>
+            <div className="flex items-center gap-3 shrink-0 flex-wrap">
+              <Link href="/sign-up?redirect=/examinations">
+                <Button className="bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold rounded-xl px-5 h-11 text-xs sm:text-sm shadow-md">
+                  Create Account / Register
+                </Button>
+              </Link>
+              <Link href="/sign-in?redirect=/examinations">
+                <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-bold rounded-xl px-5 h-11 text-xs sm:text-sm">
+                  Sign In
+                </Button>
+              </Link>
+            </div>
           </div>
-        </header>
+        )}
 
-        {/* Content Body */}
-        <div className="p-6 sm:p-8 space-y-6 max-w-7xl mx-auto w-full">
-          {/* Hero Header */}
-          <div className="bg-gradient-to-r from-[#1e3a5f] to-[#2d5a8f] text-white rounded-3xl p-8 sm:p-10 shadow-xl relative overflow-hidden">
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        {/* 2. Authenticated Student Alert Banner */}
+        {isStudent && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <GraduationCap className="w-6 h-6" />
+              </div>
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur text-xs font-semibold uppercase tracking-wider mb-3">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Examination Schedule & Portal
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                  Scheduled Syllabus Tests
-                </h2>
-                <p className="text-white/80 text-sm sm:text-base mt-2 max-w-xl">
-                  Check upcoming syllabus mock tests, live available examination windows, and completed test schedules.
+                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                  Enrolled Student Access Active
+                </p>
+                <h3 className="text-base font-bold text-gray-900">
+                  Ready to take your examination, {user?.first_name || user?.username}?
+                </h3>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Access your dedicated exam room with live question bank, countdown timer, and answer submissions.
                 </p>
               </div>
             </div>
-          </div>
 
-        {/* Status Category Tabs & Search Bar */}
-        <div className="bg-white p-4 sm:p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            <Link href="/student/examinations" className="shrink-0">
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl h-10 px-5 text-xs shadow-xs">
+                Open Student Exam Hall
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* 3. Authenticated Admin Alert Banner */}
+        {isAdmin && (
+          <div className="bg-blue-50 border border-blue-200 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#1e3a5f] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <ShieldCheck className="w-6 h-6 text-teal-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                  Administrator Session Active
+                </p>
+                <h3 className="text-base font-bold text-gray-900">
+                  Manage Official Examination Schedules
+                </h3>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  To create, edit, publish, or view student test submissions, visit the Admin Operations Console.
+                </p>
+              </div>
+            </div>
+
+            <Link href="/admin/examinations" className="shrink-0">
+              <Button className="bg-[#1e3a5f] hover:bg-[#2a4a7a] text-white font-bold rounded-xl h-10 px-5 text-xs shadow-xs">
+                Admin Exam Console
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Filter and Search Bar */}
+        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-gray-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
             {[
               { label: 'All Exams', value: 'ALL' },
@@ -229,7 +268,7 @@ function StudentExaminationsContent() {
               placeholder="Search by examination title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 h-11 rounded-xl bg-gray-50/50 border-gray-200 text-sm focus:bg-white"
+              className="pl-9 pr-4 py-2 h-11 rounded-2xl bg-gray-50/70 border-gray-200 text-sm focus:bg-white"
             />
           </form>
         </div>
@@ -241,7 +280,7 @@ function StudentExaminationsContent() {
             <p className="text-sm font-medium text-gray-500">Checking scheduled examinations...</p>
           </div>
         ) : examinations.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm max-w-lg mx-auto space-y-4">
+          <div className="bg-white rounded-3xl p-12 text-center border border-gray-200/80 shadow-xs max-w-lg mx-auto space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-teal-50 text-[#0d9488] flex items-center justify-center mx-auto">
               <BookOpen className="w-7 h-7" />
             </div>
@@ -249,7 +288,7 @@ function StudentExaminationsContent() {
             <p className="text-sm text-gray-500">
               {searchQuery || statusFilter !== 'ALL'
                 ? "No published examinations match your selected filter criteria. Try clearing search."
-                : "There are currently no examinations scheduled for your syllabus. Check back shortly for upcoming mock tests!"}
+                : "There are currently no examinations scheduled. Check back shortly for upcoming syllabus tests!"}
             </p>
             {(searchQuery || statusFilter !== 'ALL') && (
               <Button
@@ -278,14 +317,14 @@ function StudentExaminationsContent() {
                     "bg-white rounded-3xl p-6 border transition-all duration-200 flex flex-col justify-between hover:shadow-lg relative overflow-hidden group",
                     isOngoing 
                       ? "border-emerald-300 ring-2 ring-emerald-500/20 shadow-md"
-                      : "border-gray-100 shadow-sm"
+                      : "border-gray-200/80 shadow-xs hover:border-teal-300"
                   )}
                 >
                   {/* Top Badge Banner */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                        Exam #{exam.id}
+                        Test #{exam.id}
                       </span>
                       {isOngoing ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
@@ -305,7 +344,7 @@ function StudentExaminationsContent() {
                       )}
                     </div>
 
-                    {/* Title */}
+                    {/* Title & Preview */}
                     <div>
                       <h3 className="text-lg font-bold text-[#1e3a5f] group-hover:text-[#0d9488] transition-colors line-clamp-2">
                         {exam.title}
@@ -344,27 +383,48 @@ function StudentExaminationsContent() {
                     </div>
                   </div>
 
-                  {/* Card Bottom / Notice */}
-                  <div className="mt-6 pt-4 border-t border-gray-100 space-y-3">
-                    <p className="text-[11px] text-gray-400 italic">
-                      {isOngoing 
-                        ? "• Scheduled window active. Test interface activates in Phase 4." 
-                        : isUpcoming 
-                        ? "• Scheduled ahead. Test window opens automatically." 
-                        : "• Examination concluded."}
-                    </p>
-
-                    <Link href={`/examinations/${exam.id}`} className="block">
+                  {/* Card Bottom / Action */}
+                  <div className="mt-6 pt-4 border-t border-gray-100 space-y-2">
+                    {/* Primary Button based on Auth Role */}
+                    {isStudent ? (
+                      <Link href={`/student/examinations/${exam.id}`} className="block">
+                        <Button
+                          className={cn(
+                            "w-full rounded-xl font-bold text-xs h-10 gap-2 shadow-xs",
+                            isOngoing
+                              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                              : "bg-[#1e3a5f] hover:bg-[#2a4a7a] text-white"
+                          )}
+                        >
+                          {isOngoing ? 'Launch Test Room' : 'View Test Details'}
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                    ) : isAdmin ? (
+                      <Link href={`/admin/examinations/${exam.id}`} className="block">
+                        <Button className="w-full rounded-xl font-bold text-xs h-10 gap-2 bg-[#1e3a5f] hover:bg-[#2a4a7a] text-white shadow-xs">
+                          Manage Examination
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                    ) : (
                       <Button
+                        onClick={() => setPromptExam(exam)}
                         className={cn(
                           "w-full rounded-xl font-bold text-xs h-10 gap-2 shadow-xs",
                           isOngoing
-                            ? "bg-[#0d9488] hover:bg-[#0f766e] text-white"
+                            ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                             : "bg-[#1e3a5f] hover:bg-[#2a4a7a] text-white"
                         )}
                       >
-                        View Examination Details
-                        <ChevronRight className="w-4 h-4" />
+                        {isOngoing ? 'Attempt Examination' : 'View Test Particulars'}
+                        <Lock className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+
+                    <Link href={`/examinations/${exam.id}`} className="block">
+                      <Button variant="ghost" size="sm" className="w-full text-[11px] text-gray-500 hover:text-gray-800 h-8">
+                        Public Overview & Timings
                       </Button>
                     </Link>
                   </div>
@@ -373,20 +433,29 @@ function StudentExaminationsContent() {
             })}
           </div>
         )}
-        </div>
-      </main>
+      </div>
+
+      {/* Registration Prompt Modal for Unauthenticated Visitors */}
+      <RegisterPromptModal
+        isOpen={!!promptExam}
+        onClose={() => setPromptExam(null)}
+        title={promptExam ? `Enroll to Attempt "${promptExam.title}"` : undefined}
+        description="Online test attempts, live question rendering, and real-time score evaluations are reserved for enrolled students. Sign in or create an account to start your examination."
+        itemName={promptExam?.title}
+        redirectPath={promptExam ? `/student/examinations/${promptExam.id}` : '/examinations'}
+      />
     </div>
   );
 }
 
-export default function StudentExaminationsPage() {
+export default function PublicExaminationsPage() {
   return (
     <React.Suspense fallback={
-      <div className="min-h-[70vh] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
         <Loader2 className="w-10 h-10 text-[#0d9488] animate-spin" />
       </div>
     }>
-      <StudentExaminationsContent />
+      <PublicExaminationsContent />
     </React.Suspense>
   );
 }

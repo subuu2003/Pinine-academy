@@ -153,7 +153,7 @@ export default function EditExaminationPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
+      <div className="flex h-full w-full bg-[#f8fafc] overflow-hidden">
         <AdminSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="w-10 h-10 text-[#0d9488] animate-spin" />
@@ -163,7 +163,7 @@ export default function EditExaminationPage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
+    <div className="flex h-full w-full bg-[#f8fafc] overflow-hidden">
       {/* Sidebar */}
       <AdminSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
 

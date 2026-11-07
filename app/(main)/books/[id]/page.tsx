@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, CheckCircle2, ShoppingCart, Star, ShieldCheck, Truck, BookOpen } from 'lucide-react';
 import apiClient from '@/lib/apiClient';
+import { useCart } from '@/lib/CartContext';
 
 interface Book {
   id: number | string;
@@ -18,6 +19,8 @@ interface Book {
   description?: string;
   author?: string;
   is_bestseller?: boolean;
+  inStock?: boolean;
+  stock_quantity?: number;
 }
 
 const sampleCatalog: Record<string, Book> = {
@@ -80,9 +83,13 @@ const sampleCatalog: Record<string, Book> = {
 
 export default function BookDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const [isAdding, setIsAdding] = useState(false);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -120,7 +127,22 @@ export default function BookDetailsPage() {
     price: 599,
     author: "PINENE ACADEMY",
     description: "Comprehensive textbook and study materials aligned with current academic benchmarks.",
-    image_url: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=600&h=800&fit=crop"
+    image_url: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=600&h=800&fit=crop",
+    inStock: true,
+    stock_quantity: 50
+  };
+
+  const handleAddToCart = async () => {
+    setIsAdding(true);
+    await addToCart(currentBook, quantity);
+    setIsAdding(false);
+  };
+
+  const handleBuyNow = async () => {
+    const success = await addToCart(currentBook, quantity);
+    if (success) {
+      router.push('/checkout');
+    }
   };
 
   return (
@@ -165,6 +187,15 @@ export default function BookDetailsPage() {
                   <Badge variant="outline" className="text-blue-700 bg-blue-50 border-blue-200">
                     {currentBook.subject}
                   </Badge>
+                  {currentBook.inStock !== false ? (
+                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                      In Stock ({currentBook.stock_quantity ?? 50} available)
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-rose-50 text-rose-700 border-rose-200">
+                      Out of Stock
+                    </Badge>
+                  )}
                 </div>
 
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1e3a5f] tracking-tight">
@@ -179,6 +210,30 @@ export default function BookDetailsPage() {
                   <span className="text-sm text-gray-400 line-through">₹{Number(currentBook.price) + 200}</span>
                   <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
                     Save ₹200
+                  </span>
+                </div>
+
+                {/* Quantity Stepper */}
+                <div className="mt-6 flex items-center gap-4">
+                  <span className="text-xs font-bold text-gray-600">Quantity:</span>
+                  <div className="flex items-center border border-gray-200 rounded-xl bg-gray-50 p-1">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white text-gray-600 font-bold transition-colors"
+                      disabled={quantity <= 1}
+                    >
+                      -
+                    </button>
+                    <span className="w-10 text-center font-bold text-sm text-gray-800">{quantity}</span>
+                    <button
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white text-gray-600 font-bold transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className="text-xs text-gray-400">
+                    Total: <strong className="text-gray-800">₹{Math.round(currentBook.price * quantity)}</strong>
                   </span>
                 </div>
 
@@ -205,18 +260,24 @@ export default function BookDetailsPage() {
                 </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
-                <Link href={`https://wa.me/9861247722?text=Hello%20Pinene%20Academy,%20I%20would%20like%20to%20order%20the%20book:%20${encodeURIComponent(currentBook.title)}%20(ID:%20${currentBook.id})`} target="_blank" className="flex-1">
-                  <Button className="w-full h-12 bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-base rounded-xl flex items-center justify-center gap-2 shadow-lg">
-                    <ShoppingCart className="w-5 h-5" />
-                    Order via WhatsApp
-                  </Button>
-                </Link>
-                <Link href="/contact" className="sm:w-auto">
-                  <Button variant="outline" className="w-full h-12 rounded-xl text-gray-700 font-semibold px-6">
-                    Inquire Copies
-                  </Button>
-                </Link>
+                <Button 
+                  onClick={handleAddToCart}
+                  disabled={isAdding || currentBook.inStock === false}
+                  className="flex-1 h-12 bg-white border-2 border-[#0d9488] text-[#0d9488] hover:bg-teal-50 font-bold text-base rounded-xl flex items-center justify-center gap-2 shadow-xs"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  {isAdding ? 'Adding...' : 'Add to Cart'}
+                </Button>
+
+                <Button 
+                  onClick={handleBuyNow}
+                  disabled={currentBook.inStock === false}
+                  className="flex-1 h-12 bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-base rounded-xl flex items-center justify-center gap-2 shadow-lg"
+                >
+                  Buy Now & Checkout
+                </Button>
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-4 text-xs text-gray-500 pt-4 border-t border-gray-100">

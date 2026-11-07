@@ -59,6 +59,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/notices" className="text-white/70 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block text-sm">
+                  Notice Board
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="text-white/70 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block text-sm">
                   Contact
                 </Link>

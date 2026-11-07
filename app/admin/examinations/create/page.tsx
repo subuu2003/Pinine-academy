@@ -157,7 +157,7 @@ export default function CreateExaminationPage() {
   };
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
+    <div className="flex h-full w-full bg-[#f8fafc] overflow-hidden">
       {/* Sidebar */}
       <AdminSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
 

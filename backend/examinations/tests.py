@@ -296,10 +296,10 @@ class ExaminationManagementTests(TestCase):
         self.assertEqual(res_create.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_user_cannot_access_examinations(self):
-        # Admin endpoint
+        # Admin endpoint is strictly protected
         res_admin = self.client.get('/api/admin/examinations/')
         self.assertEqual(res_admin.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        # Student endpoint
+        # Public examinations schedule is accessible
         res_student = self.client.get('/api/examinations/')
-        self.assertEqual(res_student.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(res_student.status_code, status.HTTP_200_OK)

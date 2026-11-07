@@ -21,6 +21,7 @@ class BookSerializer(serializers.ModelSerializer):
             'publisher',
             'is_bestseller',
             'inStock',
+            'stock_quantity',
             'created_at',
             'updated_at',
         ]

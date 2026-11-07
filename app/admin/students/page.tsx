@@ -7,23 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Users, 
-  Search, 
-  Plus, 
-  Shield, 
-  Eye, 
-  Edit, 
-  UserCheck, 
-  UserX, 
-  X, 
-  Loader2, 
-  GraduationCap, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  ShoppingBag, 
+import {
+  Users,
+  Search,
+  Plus,
+  Shield,
+  Eye,
+  Edit,
+  UserCheck,
+  UserX,
+  X,
+  Loader2,
+  GraduationCap,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  ShoppingBag,
   Clock,
   ArrowUpRight,
   Filter
@@ -191,7 +191,7 @@ export default function AdminStudentsPage() {
 
   if (isLoadingAuth || !isAuthenticated || (!user?.is_staff && user?.role !== 'ADMIN')) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-gray-50">
+      <div className="h-full w-full flex items-center justify-center bg-gray-50">
         <Loader2 className="w-10 h-10 animate-spin text-[#0d9488]" />
       </div>
     );
@@ -202,7 +202,7 @@ export default function AdminStudentsPage() {
   const inactiveStudents = totalStudents - activeStudents;
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-inter">
+    <div className="flex h-full w-full bg-gray-50 overflow-hidden font-inter">
       <AdminSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -396,11 +396,10 @@ export default function AdminStudentsPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleToggleStatus(student.id)}
-                              className={`h-8 w-8 p-0 rounded-lg ${
-                                student.is_active 
-                                  ? 'text-rose-500 hover:bg-rose-50' 
+                              className={`h-8 w-8 p-0 rounded-lg ${student.is_active
+                                  ? 'text-rose-500 hover:bg-rose-50'
                                   : 'text-emerald-600 hover:bg-emerald-50'
-                              }`}
+                                }`}
                               title={student.is_active ? "Deactivate Student" : "Activate Student"}
                             >
                               {student.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
@@ -504,9 +503,8 @@ export default function AdminStudentsPage() {
               <Button
                 variant="outline"
                 onClick={() => handleToggleStatus(selectedStudent.id)}
-                className={`rounded-xl text-xs font-bold ${
-                  selectedStudent.is_active ? 'border-rose-200 text-rose-600 hover:bg-rose-50' : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
-                }`}
+                className={`rounded-xl text-xs font-bold ${selectedStudent.is_active ? 'border-rose-200 text-rose-600 hover:bg-rose-50' : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+                  }`}
               >
                 {selectedStudent.is_active ? "Deactivate Student Account" : "Activate Student Account"}
               </Button>

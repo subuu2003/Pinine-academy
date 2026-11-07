@@ -18,7 +18,9 @@ import {
   Headphones,
   Clock,
   Sparkles,
-  FileCheck
+  FileCheck,
+  Bell,
+  ShoppingBag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -60,14 +62,24 @@ export function StudentSidebar({
     },
     { 
       icon: CalendarCheck, 
-      label: 'Examinations', 
-      path: '/examinations',
+      label: 'My Examinations', 
+      path: '/student/examinations',
       badge: ongoingCount > 0 ? `${ongoingCount} Live` : undefined,
+    },
+    { 
+      icon: Bell, 
+      label: 'Notice Board', 
+      path: '/student/notices' 
     },
     { 
       icon: BookMarked, 
       label: 'Books & Materials', 
-      path: '/books' 
+      path: '/student/books' 
+    },
+    { 
+      icon: ShoppingBag, 
+      label: 'My Orders', 
+      path: '/student/orders' 
     },
     { 
       icon: User, 
@@ -84,7 +96,7 @@ export function StudentSidebar({
   return (
     <aside 
       className={cn(
-        "flex flex-col h-screen bg-[#1e3a5f] text-white transition-all duration-300 relative border-r border-[#2a4a7a] select-none shrink-0 z-30",
+        "flex flex-col h-full bg-[#1e3a5f] text-white transition-all duration-300 relative border-r border-[#2a4a7a] select-none shrink-0 z-30",
         isCollapsed ? "w-20" : "w-64"
       )}
     >
@@ -108,10 +120,9 @@ export function StudentSidebar({
       {/* Navigation Links */}
       <nav className="flex-1 px-3 space-y-1.5 mt-3 overflow-y-auto">
         {menuItems.map((item) => {
-          const isExam = item.path === '/examinations';
-          const isActive = isExam
-            ? pathname?.startsWith('/examinations')
-            : pathname === item.path;
+          const isActive = item.path === '/dashboard'
+            ? pathname === '/dashboard'
+            : pathname?.startsWith(item.path);
 
           return (
             <div key={item.label} className="space-y-1">

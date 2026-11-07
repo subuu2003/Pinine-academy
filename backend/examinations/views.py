@@ -127,13 +127,13 @@ class AdminExaminationViewSet(viewsets.ModelViewSet):
 
 class StudentExaminationViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    Student-facing API for viewing published examinations:
+    Student & Public-facing API for viewing published examinations:
     - Can only view published, non-deleted examinations
     - Can filter by upcoming, ongoing/available, completed
     - View individual examination details
     - Strictly Read-Only (no create, edit, delete, or publish rights)
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     serializer_class = StudentExaminationSerializer
     queryset = Examination.objects.published()
 
